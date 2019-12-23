@@ -18,7 +18,7 @@ use_cuda: True # Use gpu by default unless it isn't available
 buffer_cpu_only: True # If true we won't keep all of the replay buffer in vram
 
 # --- Logging options ---
-use_tensorboard: False # Log results to tensorboard
+use_tensorboard: True # Log results to tensorboard
 save_model: True # Save the models to disk
 save_model_interval: 2000000 # Save models after this many timesteps
 checkpoint_path: ""
@@ -37,9 +37,9 @@ optim_alpha: 0.99 # RMSProp alpha
 optim_eps: 0.00001 # RMSProp epsilon
 grad_norm_clip: 10 # Reduce magnitude of gradients above this L2 norm
 record_comm_overhead: True  # select true to record the communication overhead
-normalization_const: 5.0 # 1.7  # This is the lambda defind in equation 1 in the paper, controls the weight of the loss on standard deviation
-delta1: 0.04 # 10.0  # the threshold for corridor
-delta2: 0.02 # 0.0
+normalization_const: 4  # This is the lambda defind in equation 1 in the paper, controls the weight of the loss on standard deviation
+delta1: 0.03 # 10.0  # the threshold for corridor
+delta2: 0.015 # 0.0
 
 ## --- Agent parameters ---
 agent: "rnn" # Default rnn agent

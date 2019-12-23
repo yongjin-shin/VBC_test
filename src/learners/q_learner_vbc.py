@@ -7,7 +7,7 @@ import numpy as np
 from torch.optim import RMSprop
 
 # learning for 8m scenario
-class QLearner_8m:
+class QLearner_VBC:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
         self.mac = mac
@@ -49,40 +49,52 @@ class QLearner_8m:
         # Calculate estimated Q-Values
         mac_out = []
         difference_out = []
+        # mac_out_first = []
+        # diff_out_first = []
+
         difference_out1 = []         
         self.mac.init_hidden(batch.batch_size)
+
         for t in range(batch.max_seq_length):
             agent_local_outputs, hidden_states = self.mac.forward(batch, t=t)
+            # dummy0 = self.mac.env_blender(hidden_states[:, 0, :].view(32, -1))
+            # dummy1 = self.mac.env_blender(hidden_states[:, 1, :].view(32, -1))
+            # dummy2 = self.mac.env_blender(hidden_states[:, 2, :].view(32, -1))
+            # dummy3 = self.mac.env_blender(hidden_states[:, 3, :].view(32, -1))
+            # dummy4 = self.mac.env_blender(hidden_states[:, 4, :].view(32, -1))
+            # dummy5 = self.mac.env_blender(hidden_states[:, 5, :].view(32, -1))
+            #
+            # agent0 = (dummy1 + dummy2 + dummy3 + dummy4 + dummy5) / 5.0
+            # agent1 = (dummy0 + dummy2 + dummy3 + dummy4 + dummy5) / 5.0
+            # agent2 = (dummy0 + dummy1 + dummy3 + dummy4 + dummy5) / 5.0
+            # agent3 = (dummy0 + dummy1 + dummy2 + dummy4 + dummy5) / 5.0
+            # agent4 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy5) / 5.0
+            # agent5 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy4) / 5.0
+            # agent_global_outputs = th.cat((agent0.view((32, 1, 14)), agent1.view((32, 1, 14)), agent2.view((32, 1, 14)),
+            #                                agent3.view((32, 1, 14)), agent4.view((32, 1, 14)),
+            #                                agent5.view((32, 1, 14))), 1)
+            # agent_outs_first = agent_local_outputs + agent_global_outputs
+            # difference_first = agent_global_outputs
+            # mac_out_first.append(agent_outs_first)
+            # diff_out_first.append(difference_first)
+
             msg_list = [self.mac.env_blender(hidden_states[:, i, :].view(self._batch_size, -1))
                         for i in range(self._n_agents)]
             msg_list = th.stack(msg_list, 1)
-            msg_sum = th.sum(msg_list, 0)
-            msg_per_agent = (msg_list - msg_sum) / (self._n_agents - 1)
-            # dummy0 = self.mac.env_blender(hidden_states[:,0,:].view(32,-1))
-            # dummy1 = self.mac.env_blender(hidden_states[:,1,:].view(32,-1))
-            # dummy2 = self.mac.env_blender(hidden_states[:,2,:].view(32,-1))
-            # dummy3 = self.mac.env_blender(hidden_states[:,3,:].view(32,-1))
-            # dummy4 = self.mac.env_blender(hidden_states[:,4,:].view(32,-1))
-            # dummy5 = self.mac.env_blender(hidden_states[:,5,:].view(32,-1))
-            #
-            # agent0 = (dummy1 + dummy2 + dummy3 + dummy4 + dummy5)/5.0
-            # agent1 = (dummy0 + dummy2 + dummy3 + dummy4 + dummy5)/5.0
-            # agent2 = (dummy0 + dummy1 + dummy3 + dummy4 + dummy5)/5.0
-            # agent3 = (dummy0 + dummy1 + dummy2 + dummy4 + dummy5)/5.0
-            # agent4 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy5)/5.0
-            # agent5 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy4)/5.0
-            # agent_global_outputs =th.cat((agent0.view((32,1,14)),agent1.view((32,1,14)),agent2.view((32,1,14)),
-            #                               agent3.view((32,1,14)),agent4.view((32,1,14)),agent5.view((32,1,14))),1)
-
-            # print(self.args.batch_size)
-            # print(msg_per_agent.size())
-            # print(agent_local_outputs.size())
+            msg_sum = th.sum(msg_list, 1).unsqueeze(1)
+            msg_per_agent = ((-1 * msg_list) + msg_sum) / (self._n_agents - 1)
 
             agent_outs = agent_local_outputs + msg_per_agent
             difference = msg_per_agent
             mac_out.append(agent_outs)
             difference_out.append(difference)
-            
+
+        #     print(th.sum(agent_outs_first - agent_outs))
+        #     print(th.sum(difference_first - difference))
+        #
+        # print(th.sum(th.stack(mac_out_first, 1) - th.stack(mac_out, 1)))
+        # print(th.sum(th.stack(diff_out_first, 1) - th.stack(difference_out, 1)))
+
         mac_out = th.stack(mac_out, dim=1)  # Concat over time
         difference_out = th.stack(difference_out, dim=1)  # Concat over time
         difference_out = th.std(difference_out,dim = 3).sum()
@@ -98,23 +110,9 @@ class QLearner_8m:
             msg_list = [self.mac.env_blender(target_hidden_states[:, i, :].view(self.args.batch_size, -1))
                         for i in range(self._n_agents)]
             msg_list = th.stack(msg_list, 1)
-            msg_sum = th.sum(msg_list, 0)
-            msg_per_agent = (msg_list - msg_sum) / (self._n_agents - 1)
-            # dummy0 = self.target_mac.env_blender(target_hidden_states[:,0,:].view(32,-1))
-            # dummy1 = self.target_mac.env_blender(target_hidden_states[:,1,:].view(32,-1))
-            # dummy2 = self.target_mac.env_blender(target_hidden_states[:,2,:].view(32,-1))
-            # dummy3 = self.target_mac.env_blender(target_hidden_states[:,3,:].view(32,-1))
-            # dummy4 = self.target_mac.env_blender(target_hidden_states[:,4,:].view(32,-1))
-            # dummy5 = self.target_mac.env_blender(target_hidden_states[:,5,:].view(32,-1))
-            #
-            # target_agent0 = (dummy1 + dummy2 + dummy3 + dummy4 + dummy5)/5.0
-            # target_agent1 = (dummy0 + dummy2 + dummy3 + dummy4 + dummy5)/5.0
-            # target_agent2 = (dummy0 + dummy1 + dummy3 + dummy4 + dummy5)/5.0
-            # target_agent3 = (dummy0 + dummy1 + dummy2 + dummy4 + dummy5)/5.0
-            # target_agent4 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy5)/5.0
-            # target_agent5 = (dummy0 + dummy1 + dummy2 + dummy3 + dummy4)/5.0
-            #
-            # target_agent_global_outputs = th.cat((target_agent0.view((32,1,14)),target_agent1.view((32,1,14)),target_agent2.view((32,1,14)),target_agent3.view((32,1,14)),target_agent4.view((32,1,14)),target_agent5.view((32,1,14))),1)
+            msg_sum = th.sum(msg_list, 1).unsqueeze(1)
+            # msg_per_agent = (msg_list - msg_sum) / (self._n_agents - 1)
+            msg_per_agent = ((-1 * msg_list) + msg_sum) / (self._n_agents - 1)
 
             target_agent_outs = target_agent_local_outputs + msg_per_agent
             target_mac_out.append(target_agent_outs)

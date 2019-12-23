@@ -5,8 +5,8 @@
 action_selector: "epsilon_greedy"
 epsilon_start: 1.0
 epsilon_finish: 0.05
-epsilon_anneal_time: 50000
-mac: "basic_mac_8m" # Basic controller
+epsilon_anneal_time: 200000 # 50000
+mac: "basic_mac_vbc" # Basic controller
 runner: "parallel"
 batch_size_run: 8
 
@@ -17,7 +17,7 @@ target_update_interval: 200
 
 # use the Q_Learner to train
 agent_output_type: "q"
-learner: "q_learner_8m"
+learner: "q_learner_vbc"
 double_q: True
 mixer: "qmix"
 mixing_embed_dim: 32

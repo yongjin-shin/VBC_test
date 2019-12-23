@@ -61,8 +61,10 @@ def test_model(model, env, num_runs=50):
             actions, _, _, _ = learner.mac.select_actions_comm_proto(
                 runner.batch, t_ep=runner.t, t_env=runner.t, test_mode=True)
 
+            # ========================================================================
             # ====Moved this Code from outside the loop into the loop=================
             reward, terminated, env_info = env.step(actions[0])
+            # ========================================================================
             # ========================================================================
 
             episode_return += reward

@@ -29,6 +29,7 @@ def my_main(_run, _config, _log, env_args):
     np.random.seed(_config["seed"])
     th.manual_seed(_config["seed"])
     env_args['seed'] = _config["seed"]
+    _config['local_results_path'] = 'results_' + _config['mac'][9:] + '_' + _config['env_args']['map_name']
 
     # run the framework
     run(_run, _config, _log)
@@ -74,7 +75,6 @@ if __name__ == '__main__':
     alg_config = _get_config(params, "--config", "algs")
     config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
-    config_dict['local_results_path'] = 'results' + config_dict['mac'][9:]
     # now add all the config to sacred
     ex.add_config(config_dict)
 
